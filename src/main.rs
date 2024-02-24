@@ -30,4 +30,16 @@ fn main() {
     } else {
         panic!("{}", "This OS is not supported by this tool".red());
     }
+
+    // get the package for this ditribution
+    let dist = match whoami::devicename_os().into_string() {
+        Ok(res) => res.to_lowercase().replace(' ', "_"),
+        Err(err) => panic!("Cannot get distribution name {:?}", err),
+    };
+
+    if dist != "pop_os" {
+        panic!("Tooling is not configured for this OS yet")
+    }
+
+    // check if python3 is installed
 }
