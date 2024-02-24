@@ -6,7 +6,7 @@ use whoami::Platform;
 
 fn main() {
     // get users real name
-    println!("{} {}", "Hello".green(), whoami::realname().green());
+    println!("{} {}", "Hello".magenta(), whoami::realname().magenta());
 
     let mut sys = System::new_all();
 
@@ -16,10 +16,10 @@ fn main() {
     match whoami::platform() {
         Platform::Linux => println!(
             "{} {} {} {}",
-            "You are running Distro:".green(),
-            whoami::distro().green(),
-            "on Arch:".green(),
-            whoami::arch().to_string().green()
+            "You are running Distro:".magenta(),
+            whoami::distro().magenta(),
+            "on Arch:".magenta(),
+            whoami::arch().to_string().magenta()
         ),
         Platform::Unknown(s) => eprintln!("Unknown OS {}", s.red()),
         _ => panic!("{}", "Cannot identify the OS".red()),
@@ -50,17 +50,34 @@ fn main() {
         )
     }
 
-    // check if python3 is installed
-    match which("python3") {
-        Ok(path) => println!(
-            "{} {}",
-            "Python available at:".green(),
-            path.into_os_string().into_string().unwrap().green()
-        ),
-        Err(err) => println!(
-            "{} {}",
-            "Installing Python3".yellow(),
-            err.to_string().yellow()
-        ),
-    };
+    // packages to install/check
+    let packages = vec![
+        String::from("brew"),
+        String::from("ssh"),
+        String::from("git"),
+        String::from("python3"),
+        String::from("pip3"),
+        String::from("ansible"),
+    ];
+
+    for package in packages {
+        match which(&package) {
+            Ok(path) => println!(
+                "{} {} {}",
+                package.green(),
+                "available at:".green(),
+                path.into_os_string()
+                    .into_string()
+                    .expect("Unhandled path error")
+                    .green()
+            ),
+            Err(err) => println!(
+                "{} {} {} {}",
+                "Installing".bold().yellow(),
+                package.bold().yellow(),
+                "->".bold().yellow(),
+                err.to_string().bold().yellow()
+            ),
+        };
+    }
 }
