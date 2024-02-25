@@ -2,6 +2,8 @@ use bldr::create_directories;
 use bldr::gather_info;
 use bldr::validate_sys;
 use colored::Colorize;
+use std::process::Command;
+use std::str;
 use which::which;
 
 fn main() {
@@ -66,7 +68,14 @@ fn main() {
 
 #[allow(dead_code)]
 fn install_brew() {
-    todo!("installing brew")
+    // let output = Command::new("sh")
+    //     .arg("-c")
+    //     .arg("$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)")
+    //     .output()
+    //     .expect("failed to execute process");
+
+    // let s = str::from_utf8(&output.stdout).unwrap();
+    // println!("{}", s);
 }
 
 #[allow(dead_code)]
