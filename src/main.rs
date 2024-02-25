@@ -1,57 +1,23 @@
+use bldr::gather_info;
+use bldr::validate_sys;
 use colored::Colorize;
-use core::panic;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
-use sysinfo::System;
 use which::which;
-use whoami::Platform;
 
 fn main() {
-    // get users real name
-    println!("{} {}", "Hello".magenta(), whoami::realname().magenta());
+    // greet the user with first and last name
+    gather_info::get_user();
 
-    let mut sys = System::new_all();
+    // get the OS that this is installed on
+    gather_info::get_os();
 
-    sys.refresh_all();
+    // check if this tool is supported
+    gather_info::get_support();
 
-    // get OS of the system
-    match whoami::platform() {
-        Platform::Linux => println!(
-            "{} {} {} {}",
-            "You are running Distro:".magenta(),
-            whoami::distro().magenta(),
-            "on Arch:".magenta(),
-            whoami::arch().to_string().magenta()
-        ),
-        Platform::Unknown(s) => eprintln!("Unknown OS {}", s.red()),
-        _ => panic!("{}", "Cannot identify the OS".red()),
-    }
-
-    //check if this tool is supported
-    if sysinfo::IS_SUPPORTED_SYSTEM {
-        println!("{}", "This OS is suported by this tool".green())
-    } else {
-        panic!("{}", "This OS is not supported by this tool".red());
-    }
-
-    // get the package for this ditribution
-    let dist = match whoami::devicename_os().into_string() {
-        Ok(res) => res.to_lowercase().replace(' ', "_"),
-        Err(err) => panic!(
-            "{} {:?}",
-            "Cannot get distribution name".red(),
-            err.into_string().unwrap().red()
-        ),
-    };
-
-    //  limit this to a single distribution for the moment
-    if dist != "pop_os" {
-        panic!(
-            "{}",
-            "Tooling is not configured for this distribution yet".red()
-        )
-    }
+    // check if this distribution is supported
+    validate_sys::distribution_check();
 
     // create/verify paths exist
     let home = env::var("HOME").expect("$HOME is not set");
