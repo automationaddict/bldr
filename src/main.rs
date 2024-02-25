@@ -1,9 +1,7 @@
+use bldr::create_directories;
 use bldr::gather_info;
 use bldr::validate_sys;
 use colored::Colorize;
-use std::collections::HashMap;
-use std::env;
-use std::path::PathBuf;
 use which::which;
 
 fn main() {
@@ -19,31 +17,8 @@ fn main() {
     // check if this distribution is supported
     validate_sys::distribution_check();
 
-    // create/verify paths exist
-    let home = env::var("HOME").expect("$HOME is not set");
-    let mut paths = HashMap::new();
-
-    #[rustfmt::skip]
-    paths.insert(
-        "config_dir", 
-        PathBuf::new().join(&home).join(".config"));
-    #[rustfmt::skip]
-    paths.insert(
-        "vault_dir",
-        PathBuf::new().join(&home).join(".ansible-vault"));
-    #[rustfmt::skip]
-    paths.insert(
-        "dotfiles_dir", 
-        PathBuf::new().join(&home).join(".dotfiles"));
-    #[rustfmt::skip]
-    paths.insert(
-        "ssh_dir", 
-        PathBuf::new().join(&home).join(".ssh"));
-
-    println!(
-        "PATH Value{:?}",
-        paths.get(&"dotfiles_dir").unwrap().try_exists()
-    );
+    // create/check existence of: dotfile directories
+    create_directories::dotfiles();
 
     // packages to install/check
     let packages = vec![
