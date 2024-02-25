@@ -1,5 +1,8 @@
 use colored::Colorize;
 use core::panic;
+use std::collections::HashMap;
+use std::env;
+use std::path::Path;
 use sysinfo::System;
 use which::which;
 use whoami::Platform;
@@ -50,6 +53,15 @@ fn main() {
         )
     }
 
+    // create/verify paths exist
+    let home = env::var("HOME").expect("$HOME is not set");
+    let mut paths = HashMap::new();
+
+    paths.insert("config_dir", Path::new(""));
+    paths.insert("vault_dir", Path::new(""));
+    paths.insert("dotfiles_dir", Path::new(""));
+    paths.insert("ssh_dir", Path::new(""));
+
     // packages to install/check
     let packages = vec![
         String::from("brew"),
@@ -71,13 +83,55 @@ fn main() {
                     .expect("Unhandled path error")
                     .green()
             ),
-            Err(err) => println!(
-                "{} {} {} {}",
-                "Installing".bold().yellow(),
-                package.bold().yellow(),
-                "->".bold().yellow(),
-                err.to_string().bold().yellow()
-            ),
+            Err(err) => {
+                eprintln!(
+                    "{} {} {} {}",
+                    "Installing".bold().yellow(),
+                    package.bold().yellow(),
+                    "->".bold().yellow(),
+                    err.to_string().bold().yellow()
+                );
+
+                match &package[..] {
+                    "brew" => install_brew(),
+                    "ssh" => install_ssh(),
+                    "git" => install_git(),
+                    "python3" => install_python3(),
+                    "pip3" => install_pip3(),
+                    "ansible" => install_ansible(),
+                    _ => eprintln!("No package to install"),
+                };
+            }
         };
     }
+}
+
+#[allow(dead_code)]
+fn install_brew() {
+    todo!("installing brew")
+}
+
+#[allow(dead_code)]
+fn install_ssh() {
+    todo!("installing ssh")
+}
+
+#[allow(dead_code)]
+fn install_git() {
+    todo!("installing git")
+}
+
+#[allow(dead_code)]
+fn install_python3() {
+    todo!("installing python3")
+}
+
+#[allow(dead_code)]
+fn install_pip3() {
+    todo!("installing python3-pip")
+}
+
+#[allow(dead_code)]
+fn install_ansible() {
+    todo!("installing ansible")
 }
