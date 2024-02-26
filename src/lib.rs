@@ -1,8 +1,6 @@
 pub mod gather_info {
 
-    use colored::Colorize;
-    use core::panic;
-    use std::process::Command;
+    use std::{env, process::Command};
 
     // custom error type for the get_users_full_name() function
     #[derive(Debug)]
@@ -73,12 +71,14 @@ pub mod gather_info {
         }
     }
 
-    pub fn get_support() {
+    // check what os this is running on
+    pub fn detect_os() -> Result<String, String> {
         //check if this tool is supported
-        if sysinfo::IS_SUPPORTED_SYSTEM {
-            println!("{}", "This OS is suported by this tool".green())
-        } else {
-            panic!("{}", "This OS is not supported by this tool".bold().red());
+        let os_type = env::consts::OS;
+        match os_type {
+            // todo: add additional OS later
+            "linux" => Ok("Linux".to_string()),
+            _ => Err(os_type.to_string()),
         }
     }
 }

@@ -44,7 +44,14 @@ fn main() {
     }
 
     // check if this tool is supported
-    gather_info::get_support();
+    match gather_info::detect_os() {
+        Ok(os) => println!("{} {}", "Your OS is supported:".green(), os.green()),
+        Err(err) => eprintln!(
+            "{} {}",
+            "Your OS is NOT supported yet".bold().red(),
+            err.bold().red()
+        ),
+    }
 
     // check if this distribution is supported
     validate_sys::distribution_check();
