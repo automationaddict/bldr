@@ -2,16 +2,38 @@ pub mod gather_info {
 
     use colored::Colorize;
     use core::panic;
+    use std::process::Command;
     use sysinfo::System;
     use whoami::Platform;
 
-    pub fn get_user() {
+    #[derive(Debug)]
+    pub enum NameError {
+        CommandExecutionError,
+        UserInfoParsingError,
+    }
+
+    pub fn get_users_full_name() -> std::result::Result<String, NameError> {
         // get users real name
-        println!(
-            "{} {}",
-            "Hello".truecolor(255, 120, 0),
-            whoami::realname().truecolor(255, 120, 0)
-        );
+        let output = Command::new("whoami")
+            .output()
+            .map_err(|_| NameError::CommandExecutionError)?;
+
+        let username = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        let user_info_output = Command::new("getent")
+            .arg("passwd")
+            .arg(&username)
+            .output()
+            .map_err(|_| NameError::CommandExecutionError)?;
+
+        let user_info = String::from_utf8_lossy(&user_info_output.stdout);
+        let fields: Vec<&str> = user_info.split(':').collect();
+
+        if fields.len() >= 5 {
+            Ok(fields[4].trim().to_string())
+        } else {
+            Err(NameError::UserInfoParsingError)
+        }
     }
 
     pub fn get_os() {

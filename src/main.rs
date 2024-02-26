@@ -1,5 +1,6 @@
 use bldr::create_directories;
 use bldr::gather_info;
+use bldr::gather_info::NameError;
 use bldr::validate_sys;
 use colored::Colorize;
 use std::process::Command;
@@ -7,8 +8,22 @@ use std::str;
 use which::which;
 
 fn main() {
-    // greet the user with first and last name
-    gather_info::get_user();
+    // greet the user with their full name
+    match gather_info::get_users_full_name() {
+        Ok(full_name) => println!(
+            "{} {}",
+            "Full Name:".truecolor(255, 120, 0),
+            full_name.truecolor(255, 120, 0)
+        ),
+        Err(err) => match err {
+            NameError::CommandExecutionError => {
+                println!("{}", "Error executing system command".bold().red())
+            }
+            NameError::UserInfoParsingError => {
+                println!("{}", "Unable to retrieve user information".bold().red())
+            }
+        },
+    }
 
     // get the OS that this is installed on
     gather_info::get_os();
