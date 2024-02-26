@@ -1,6 +1,7 @@
 use bldr::create_directories;
 use bldr::gather_info;
 use bldr::gather_info::NameError;
+use bldr::gather_info::OSError;
 use bldr::validate_sys;
 use colored::Colorize;
 use std::process::Command;
@@ -26,7 +27,21 @@ fn main() {
     }
 
     // get the OS that this is installed on
-    gather_info::get_os();
+    match gather_info::get_os_info() {
+        Ok(os_info) => println!(
+            "{} {}",
+            "Operating System:".truecolor(255, 120, 0),
+            os_info.truecolor(255, 120, 0)
+        ),
+        Err(err) => match err {
+            OSError::CommandExecutionError => {
+                println!("{}", "Error executing system command".bold().red())
+            }
+            OSError::OsInfoParsingError => {
+                println!("{}", "Unable to retrieve OS information".bold().red())
+            }
+        },
+    }
 
     // check if this tool is supported
     gather_info::get_support();
