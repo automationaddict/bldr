@@ -24,13 +24,18 @@ fn main() {
 
     // packages to install/check
     let packages = vec![
-        String::from("brew"),
         String::from("ssh"),
         String::from("git"),
         String::from("python3"),
         String::from("pip3"),
         String::from("ansible"),
     ];
+
+    // update the apt cache
+    update_cache();
+
+    // update the system before installing packages
+    upgrade_packages();
 
     for package in packages {
         match which(&package) {
@@ -53,7 +58,6 @@ fn main() {
                 );
 
                 match &package[..] {
-                    "brew" => install_brew(),
                     "ssh" => install_ssh(),
                     "git" => install_git(),
                     "python3" => install_python3(),
@@ -66,16 +70,26 @@ fn main() {
     }
 }
 
-#[allow(dead_code)]
-fn install_brew() {
-    // let output = Command::new("sh")
-    //     .arg("-c")
-    //     .arg("$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)")
-    //     .output()
-    //     .expect("failed to execute process");
+fn update_cache() {
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("sudo apt update")
+        .output()
+        .expect("failed to execute process");
 
-    // let s = str::from_utf8(&output.stdout).unwrap();
-    // println!("{}", s);
+    let s = str::from_utf8(&output.stdout).unwrap();
+    println!("{}", s);
+}
+
+fn upgrade_packages() {
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("sudo apt upgrade -y")
+        .output()
+        .expect("failed to execute process");
+
+    let s = str::from_utf8(&output.stdout).unwrap();
+    println!("{}", s);
 }
 
 #[allow(dead_code)]
