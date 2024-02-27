@@ -1,6 +1,6 @@
 pub mod gather_info {
 
-    use std::{env, process::Command};
+    use std::process::Command;
 
     // custom error type for the get_users_full_name() function
     #[derive(Debug)]
@@ -70,6 +70,13 @@ pub mod gather_info {
             Err(OSError::OsInfoParsingError)
         }
     }
+}
+
+pub mod validate_sys {
+
+    use std::env;
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
 
     // check what os this is running on
     pub fn detect_os() -> Result<String, String> {
@@ -81,33 +88,23 @@ pub mod gather_info {
             _ => Err(os_type.to_string()),
         }
     }
-}
 
-pub mod validate_sys {
-
-    use colored::Colorize;
-    use core::panic;
-
-    pub fn distribution_check() {
+    pub fn detect_linux_distribution() -> Result<String, String> {
         // get the package for this ditribution
-        let dist = match whoami::devicename_os().into_string() {
-            Ok(res) => res.to_lowercase().replace(' ', "_"),
-            Err(err) => panic!(
-                "{} {:?}",
-                "Cannot get distribution name".bold().red(),
-                err.into_string().unwrap().bold().red()
-            ),
-        };
+        let file =
+            File::open("/etc/os-release").map_err(|e| format!("Unable to open file {}", e))?;
 
-        //  limit this to a single distribution for the moment
-        if dist != "pop_os" {
-            panic!(
-                "{}",
-                "Tooling is not configured for this distribution yet"
-                    .bold()
-                    .red()
-            )
+        let reader = BufReader::new(file);
+
+        // search for the "ID" filed in the file
+        for line in reader.lines() {
+            let line = line.map_err(|e| format!("Error reading line: {}", e))?;
+
+            if let Some(rest) = line.strip_prefix("ID=") {
+                return Ok(rest.trim_matches('"').to_string());
+            }
         }
+        Err("Distribution name not found".to_string())
     }
 }
 

@@ -44,7 +44,7 @@ fn main() {
     }
 
     // check if this tool is supported
-    match gather_info::detect_os() {
+    match validate_sys::detect_os() {
         Ok(os) => println!("{} {}", "Your OS is supported:".green(), os.green()),
         Err(err) => eprintln!(
             "{} {}",
@@ -54,7 +54,14 @@ fn main() {
     }
 
     // check if this distribution is supported
-    validate_sys::distribution_check();
+    match validate_sys::detect_linux_distribution() {
+        Ok(distro) => println!("{} {}", "Detected distribution:".green(), distro.green()),
+        Err(err) => eprintln!(
+            "{} {}",
+            "Error detecting distribution:".bold().red(),
+            err.bold().red()
+        ),
+    }
 
     // create/check existence of: dotfile directories
     create_directories::dotfiles();
@@ -129,19 +136,37 @@ fn upgrade_packages() {
     println!("{}", s);
 }
 
-#[allow(dead_code)]
 fn install_ssh() {
-    todo!("installing ssh")
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("sudo apt install -y ssh")
+        .output()
+        .expect("failed to execute process");
+
+    let s = str::from_utf8(&output.stdout).unwrap();
+    println!("{}", s);
 }
 
-#[allow(dead_code)]
 fn install_git() {
-    todo!("installing git")
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("sudo apt install -y git")
+        .output()
+        .expect("failed to execute process");
+
+    let s = str::from_utf8(&output.stdout).unwrap();
+    println!("{}", s);
 }
 
-#[allow(dead_code)]
 fn install_python3() {
-    todo!("installing python3")
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("sudo apt install -y python3")
+        .output()
+        .expect("failed to execute process");
+
+    let s = str::from_utf8(&output.stdout).unwrap();
+    println!("{}", s);
 }
 
 #[allow(dead_code)]
