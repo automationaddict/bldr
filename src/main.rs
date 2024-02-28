@@ -5,23 +5,26 @@ use bldr::gather_info::OSError;
 use bldr::validate_sys;
 use colored::Colorize;
 use std::process::Command;
+use std::process::ExitCode;
 use std::str;
 use which::which;
 
-fn main() {
+fn main() -> ExitCode {
     // greet the user with their full name
     match gather_info::get_users_full_name() {
         Ok(full_name) => println!(
             "{} {}",
-            "Full Name:".truecolor(255, 120, 0),
+            "Hey!".truecolor(255, 120, 0),
             full_name.truecolor(255, 120, 0)
         ),
         Err(err) => match err {
             NameError::CommandExecutionError => {
-                println!("{}", "Error executing system command".bold().red())
+                eprintln!("{}", "Error executing system command".bold().red());
+                return ExitCode::FAILURE;
             }
             NameError::UserInfoParsingError => {
-                println!("{}", "Unable to retrieve user information".bold().red())
+                eprintln!("{}", "Unable to retrieve user information".bold().red());
+                return ExitCode::FAILURE;
             }
         },
     }
@@ -44,7 +47,7 @@ fn main() {
     }
 
     // check if this tool is supported
-    match validate_sys::detect_os() {
+    match validate_sys::get_platform() {
         Ok(os) => println!("{} {}", "Your OS is supported:".green(), os.green()),
         Err(err) => eprintln!(
             "{} {}",
@@ -76,7 +79,7 @@ fn main() {
     ];
 
     // update the apt cache
-    update_cache();
+    // update_cache();
 
     // update the system before installing packages
     upgrade_packages();
@@ -112,6 +115,7 @@ fn main() {
             }
         };
     }
+    ExitCode::SUCCESS
 }
 
 fn update_cache() {

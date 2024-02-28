@@ -2,7 +2,7 @@ pub mod gather_info {
 
     use std::process::Command;
 
-    // custom error type for the get_users_full_name() function
+    // custom error type for the get_users_full_name()
     #[derive(Debug)]
     pub enum NameError {
         CommandExecutionError,
@@ -78,14 +78,20 @@ pub mod validate_sys {
     use std::fs::File;
     use std::io::{BufRead, BufReader};
 
-    // check what os this is running on
-    pub fn detect_os() -> Result<String, String> {
+    // custom error type for the get_platorm() function
+    #[derive(Debug)]
+    pub enum PlatformError {
+        PlatformInfoParsingError,
+    }
+
+    // check which platform the tool is running on
+    pub fn get_platform() -> Result<String, PlatformError> {
         //check if this tool is supported
         let os_type = env::consts::OS;
         match os_type {
             // todo: add additional OS later
             "linux" => Ok("Linux".to_string()),
-            _ => Err(os_type.to_string()),
+            _ => Err(PlatformError::PlatformInfoParsingError),
         }
     }
 
