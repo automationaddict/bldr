@@ -9,7 +9,7 @@ pub mod gather_info {
         UserInfoParsingError,
     }
 
-    // get the full users name
+    // get the users full name
     pub fn get_users_full_name() -> std::result::Result<String, NameError> {
         // get username using unix whoami
         let output = Command::new("whoami")
@@ -70,6 +70,21 @@ pub mod gather_info {
             Err(OSError::OsInfoParsingError)
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_get_users_full_name() {
+            assert!(get_users_full_name().is_ok());
+        }
+
+        #[test]
+        fn test_get_os_info() {
+            assert!(get_os_info().is_ok());
+        }
+    }
 }
 
 pub mod validate_sys {
@@ -79,6 +94,7 @@ pub mod validate_sys {
     use std::io::{BufRead, BufReader};
 
     // custom error type for the get_platorm() function
+    // not necessary but allows expansion later
     #[derive(Debug)]
     pub enum PlatformError {
         PlatformInfoParsingError,
@@ -165,8 +181,8 @@ pub mod create_directories {
                     } else {
                         println!(
                             "{} {} {}",
-                            key.green(),
-                            "exists! ->".green(),
+                            key,
+                            "exists! ->",
                             value.into_os_string().into_string().unwrap().green()
                         );
                     }
