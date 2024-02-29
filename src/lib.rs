@@ -111,87 +111,100 @@ pub mod validate_sys {
         }
     }
 
-    pub fn detect_linux_distribution() -> Result<String, String> {
+    // custom error type for the detect_linux_distribution() function
+    #[derive(Debug)]
+    pub enum DistroError {
+        CommandExecutionError,
+        DistributionInfoParsingError,
+        DistributionNameNotFound,
+    }
+
+    pub fn get_linux_distribution() -> Result<String, DistroError> {
         // get the package for this ditribution
-        let file =
-            File::open("/etc/os-release").map_err(|e| format!("Unable to open file {}", e))?;
+        let file = File::open("/etc/os-release").map_err(|_| DistroError::CommandExecutionError)?;
 
         let reader = BufReader::new(file);
 
         // search for the "ID" filed in the file
         for line in reader.lines() {
-            let line = line.map_err(|e| format!("Error reading line: {}", e))?;
+            let line = line.map_err(|_| DistroError::DistributionInfoParsingError)?;
 
             if let Some(rest) = line.strip_prefix("ID=") {
                 return Ok(rest.trim_matches('"').to_string());
             }
         }
-        Err("Distribution name not found".to_string())
+        Err(DistroError::DistributionNameNotFound)
+    }
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_get_platform() {
+            assert!(get_platform().is_ok());
+        }
+
+        #[test]
+        fn test_get_linux_distribution() {
+            assert!(get_linux_distribution().is_ok());
+        }
     }
 }
 
-pub mod create_directories {
+pub mod dotfiles_presence {
 
-    use colored::Colorize;
-    use core::panic;
-    use std::collections::HashMap;
-    use std::env;
     use std::fs;
-    use std::path::Path;
+    use std::path::PathBuf;
 
-    pub fn dotfiles() {
-        // create/verify paths exist
-        let home = env::var("HOME").expect("$HOME is not set");
-        let mut paths = HashMap::new();
+    // custom error type for the setup_dotfiles_directories() function
+    #[derive(Debug)]
+    pub enum DotfilesError {
+        DirectoryCreationError,
+        DirectoryAccessError,
+        DirectoryPresenceError,
+    }
 
-        #[rustfmt::skip]
-    paths.insert(
-        "config_dir", 
-        Path::new("").join(&home).join(".config"));
-        #[rustfmt::skip]
-    paths.insert(
-        "vault_dir",
-        Path::new("").join(&home).join(".ansible-vault"));
-        #[rustfmt::skip]
-    paths.insert(
-        "dotfiles_dir", 
-        Path::new("").join(&home).join(".dotfiles"));
-        #[rustfmt::skip]
-    paths.insert(
-        "ssh_dir", 
-        Path::new("").join(&home).join(".ssh"));
-
-        for (key, value) in paths {
-            match value.try_exists() {
-                Ok(ok) => {
-                    if !ok {
-                        match fs::create_dir(value) {
-                            Ok(_) => println!(
-                                "{} {} {}",
-                                "Creating".bold().yellow(),
-                                key.bold().yellow(),
-                                "directory!".bold().yellow()
-                            ),
-                            Err(err) => panic!(
-                                "{} {}",
-                                "Cannot access directory: ".bold().red(),
-                                err.to_string().bold().red()
-                            ),
-                        }
-                    } else {
-                        println!(
-                            "{} {} {}",
-                            key,
-                            "exists! ->",
-                            value.into_os_string().into_string().unwrap().green()
-                        );
-                    }
+    pub fn dotfiles_directories(path: &PathBuf) -> Result<bool, DotfilesError> {
+        match path.try_exists() {
+            Ok(ok) => {
+                if ok {
+                    // directory exists so return the path
+                    return Ok(true);
                 }
-                Err(_) => panic!(
-                    "{}",
-                    "Cannot confirm nor deny directory existence".bold().red()
-                ),
+                // directory does not exist so create it
+                // fs::create_dir(path).map_err(|_| DotfilesError::DirectoryCreationError)?;
+                let res = fs::create_dir(path);
+                match res {
+                    Ok(_) => Ok(false),
+                    Err(_) => Err(DotfilesError::DirectoryCreationError),
+                }
             }
+            Err(_) => {
+                // cannot access the directory
+                Err(DotfilesError::DirectoryAccessError)
+            }
+        }
+    }
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use std::env;
+        use std::path::Path;
+
+        #[test]
+        fn test_dotfiles_directories() {
+            let home = env::var("HOME").unwrap();
+            let mut path = Path::new(&home).join(".config");
+            assert!(dotfiles_directories(&path).is_ok());
+
+            path = Path::new(&home).join(".ansible-vault");
+            assert!(dotfiles_directories(&path).is_ok());
+
+            path = Path::new(&home).join(".dotfiles");
+            assert!(dotfiles_directories(&path).is_ok());
+
+            path = Path::new(&home).join(".ssh");
+            assert!(dotfiles_directories(&path).is_ok());
         }
     }
 }

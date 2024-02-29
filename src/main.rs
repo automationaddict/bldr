@@ -1,13 +1,16 @@
-use bldr::create_directories;
+use bldr::dotfiles_presence;
+use bldr::dotfiles_presence::DotfilesError;
 use bldr::gather_info;
 use bldr::gather_info::NameError;
 use bldr::gather_info::OSError;
 use bldr::validate_sys;
 use bldr::validate_sys::PlatformError;
 use colored::Colorize;
+use std::collections::HashMap;
+use std::env;
+use std::path::Path;
 use std::process::Command;
 use std::process::ExitCode;
-use std::str;
 use which::which;
 
 fn main() -> ExitCode {
@@ -31,37 +34,120 @@ fn main() -> ExitCode {
         Ok(os_info) => println!("{} {}", "Operating System:", os_info.green()),
         Err(err) => match err {
             OSError::CommandExecutionError => {
-                println!("{}", "Error executing system command".bold().red())
+                println!("{}", "Error executing system command".bold().red());
+                return ExitCode::FAILURE;
             }
             OSError::OsInfoParsingError => {
-                println!("{}", "Unable to retrieve OS information".bold().red())
+                println!("{}", "Unable to retrieve OS information".bold().red());
+                return ExitCode::FAILURE;
             }
         },
     }
 
     // check if this tool is supported
     match validate_sys::get_platform() {
-        Ok(platform) => println!("{} {}", "Your OS is supported:", platform.green()),
+        Ok(platform) => println!("{} {}", "Your Platform is supported:", platform.green()),
         Err(err) => match err {
             PlatformError::PlatformInfoParsingError => {
-                eprintln!("{}", "Your Platform is not supported".bold().red())
+                eprintln!("{}", "Your Platform is NOT supported".bold().red());
+                return ExitCode::FAILURE;
             }
         },
     }
 
     // check if this distribution is supported
-    match validate_sys::detect_linux_distribution() {
+    match validate_sys::get_linux_distribution() {
         Ok(distro) => println!("{} {}", "Detected distribution:", distro.green()),
-        Err(err) => eprintln!(
-            "{} {}",
-            "Error detecting distribution:".bold().red(),
-            err.bold().red()
-        ),
+        Err(err) => match err {
+            validate_sys::DistroError::CommandExecutionError => {
+                eprintln!("{}", "Error executing system command".bold().red());
+                return ExitCode::FAILURE;
+            }
+            validate_sys::DistroError::DistributionInfoParsingError => {
+                eprintln!(
+                    "{}",
+                    "Unable to retrieve distribution information".bold().red()
+                );
+                return ExitCode::FAILURE;
+            }
+            validate_sys::DistroError::DistributionNameNotFound => {
+                eprintln!("{}", "Distribution name not found".bold().red());
+                return ExitCode::FAILURE;
+            }
+        },
     }
+    // get the home directory
+    let home = env::var("HOME")
+        .map_err(|_| {
+            eprintln!("{}", "Error retrieving environment variables".bold().red());
+            ExitCode::FAILURE
+        })
+        .unwrap();
 
-    // create/check existence of: dotfile directories
-    create_directories::dotfiles();
+    // create the paths
+    let mut paths = HashMap::new();
 
+    #[rustfmt::skip]
+    paths.insert(
+        "config_dir", 
+        Path::new("").join(&home).join(".config"));
+    #[rustfmt::skip]
+    paths.insert(
+        "vault_dir",
+        Path::new("").join(&home).join(".ansible-vault"));
+    #[rustfmt::skip]
+    paths.insert(
+        "dotfiles_dir", 
+        Path::new("").join(&home).join(".dotfiles"));
+    #[rustfmt::skip]
+    paths.insert(
+        "ssh_dir", 
+        Path::new("").join(&home).join(".ssh"));
+
+    for (_, path) in paths.iter() {
+        // create/check existence of: dotfile directories
+        match dotfiles_presence::dotfiles_directories(&path) {
+            Ok(present) => {
+                if present {
+                    println!(
+                        "{} {} {}",
+                        "Dotfile directory",
+                        path.to_owned()
+                            .into_os_string()
+                            .into_string()
+                            .unwrap()
+                            .green(),
+                        "is present"
+                    );
+                } else {
+                    println!(
+                        "{} {} {}",
+                        "Dotfile directory".yellow(),
+                        path.to_owned()
+                            .into_os_string()
+                            .into_string()
+                            .unwrap()
+                            .yellow(),
+                        "created successfully".yellow()
+                    );
+                }
+            }
+            Err(err) => match err {
+                DotfilesError::DirectoryCreationError => {
+                    eprintln!("{}", "Error creating dotfiles directories".bold().red());
+                    return ExitCode::FAILURE;
+                }
+                DotfilesError::DirectoryAccessError => {
+                    eprintln!("{}", "Error accessing dotfiles directories".bold().red());
+                    return ExitCode::FAILURE;
+                }
+                DotfilesError::DirectoryPresenceError => {
+                    eprintln!("{}", "Dotfiles directories are not present".bold().red());
+                    return ExitCode::FAILURE;
+                }
+            },
+        }
+    }
     // packages to install/check
     let packages = vec![
         String::from("ssh"),
@@ -75,7 +161,7 @@ fn main() -> ExitCode {
     // update_cache();
 
     // update the system before installing packages
-    upgrade_packages();
+    // upgrade_packages();
 
     for package in packages {
         match which(&package) {
@@ -123,48 +209,24 @@ fn update_cache() {
     // println!("{}", s);
 }
 
+#[allow(dead_code)]
 fn upgrade_packages() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("sudo apt upgrade -y")
-        .output()
-        .expect("failed to execute process");
-
-    let s = str::from_utf8(&output.stdout).unwrap();
-    println!("{}", s);
+    todo!("upgrading packages")
 }
 
+#[allow(dead_code)]
 fn install_ssh() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("sudo apt install -y ssh")
-        .output()
-        .expect("failed to execute process");
-
-    let s = str::from_utf8(&output.stdout).unwrap();
-    println!("{}", s);
+    todo!("installing ssh")
 }
 
+#[allow(dead_code)]
 fn install_git() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("sudo apt install -y git")
-        .output()
-        .expect("failed to execute process");
-
-    let s = str::from_utf8(&output.stdout).unwrap();
-    println!("{}", s);
+    todo!("installing git")
 }
 
+#[allow(dead_code)]
 fn install_python3() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("sudo apt install -y python3")
-        .output()
-        .expect("failed to execute process");
-
-    let s = str::from_utf8(&output.stdout).unwrap();
-    println!("{}", s);
+    todo!("installing python3")
 }
 
 #[allow(dead_code)]
