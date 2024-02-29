@@ -87,6 +87,7 @@ fn main() -> ExitCode {
     // create the paths
     let mut paths = HashMap::new();
 
+    // todo: would these be better as a struct?
     #[rustfmt::skip]
     paths.insert(
         "config_dir", 
@@ -119,18 +120,19 @@ fn main() -> ExitCode {
                             .green(),
                         "is present"
                     );
-                } else {
-                    println!(
-                        "{} {} {}",
-                        "Dotfile directory".yellow(),
-                        path.to_owned()
-                            .into_os_string()
-                            .into_string()
-                            .unwrap()
-                            .yellow(),
-                        "created successfully".yellow()
-                    );
+                    return ExitCode::SUCCESS;
                 }
+                println!(
+                    "{} {} {}",
+                    "Dotfile directory".yellow(),
+                    path.to_owned()
+                        .into_os_string()
+                        .into_string()
+                        .unwrap()
+                        .yellow(),
+                    "created successfully".yellow()
+                );
+                return ExitCode::SUCCESS;
             }
             Err(err) => match err {
                 DotfilesError::DirectoryCreationError => {
