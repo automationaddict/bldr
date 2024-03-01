@@ -151,29 +151,54 @@ fn main() -> ExitCode {
         }
     }
 
-    // packages to install/check
-    // todo: is there a better way to do this?
-    let packages = vec![
-        String::from("ssh"),
-        String::from("git"),
-        String::from("python3"),
-        String::from("pip3"),
-        String::from("ansible"),
-        String::from("vim"),
-    ];
+    // package struct
+    struct Package {
+        name: String,
+        package: String,
+    }
 
-    // update the apt cache
-    // update_cache();
+    // packages to check for
+    let ssh = Package {
+        name: String::from("ssh"),
+        package: String::from("openssh-client"),
+    };
+    let git = Package {
+        name: String::from("git"),
+        package: String::from("git"),
+    };
+    let python3 = Package {
+        name: String::from("python3"),
+        package: String::from("python3"),
+    };
+    let python3_pip = Package {
+        name: String::from("pip"),
+        package: String::from("python3-pip"),
+    };
+    let ansible = Package {
+        name: String::from("ansible"),
+        package: String::from("ansible"),
+    };
 
-    // update the system before installing packages
-    // upgrade_packages();
+    let packages = vec![ssh, git, python3, python3_pip, ansible];
 
-    for package in packages {
-        match which(&package) {
+    println!(
+        "{}",
+        "Checking for required packages, please be patient!"
+            .bold()
+            .yellow()
+    );
+
+    // todo: need to handle this better. Maybe map on the
+    // packages and return a result? Callbacks?
+    //
+    // loop through the packages and check if they are installed
+    // if not, install them
+    for package in packages.iter() {
+        match which(&package.name) {
             Ok(path) => {
                 println!(
                     "{} {} {}",
-                    package,
+                    package.name,
                     "available at ->",
                     path.into_os_string()
                         .into_string()
@@ -181,12 +206,12 @@ fn main() -> ExitCode {
                         .green()
                 );
             }
-            Err(err) => match install_packages::install_package(&package) {
+            Err(err) => match install_packages::install_package(&package.package) {
                 Ok(_) => {
                     eprintln!(
                         "{} {} {} {}",
                         "Installing",
-                        package.bold().yellow(),
+                        package.name.bold().yellow(),
                         "->",
                         err.to_string().bold().yellow()
                     );

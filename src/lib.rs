@@ -172,7 +172,6 @@ pub mod dotfiles_presence {
                     Ok(true)
                 } else {
                     // directory does not exist so create it
-                    // fs::create_dir(path).map_err(|_| DotfilesError::DirectoryCreationError)?;
                     let res = fs::create_dir(path);
                     match res {
                         Ok(_) => Ok(false),
@@ -240,6 +239,45 @@ pub mod install_packages {
         // update the apt cache
         apt_update_upgrade();
 
+        // even though this is ugly, it is the best way to check if the repo is setup without requiring the user to add the ppa
+        if package.contains("ansible") {
+            // check if the software-properties-common package is installed
+            let output = Command::new("dpkg")
+                .arg("-l")
+                .arg("software-properties-common")
+                .output()
+                .map_err(|_| InstallError::CommandExecutionError)?;
+            // if the package is not installed
+            // install it and add the ansible repository
+            if !output.status.success() {
+                // install the package
+                Command::new("sudo")
+                    .arg("apt")
+                    .arg("install")
+                    .arg("-y")
+                    .arg("software-properties-common")
+                    .output()
+                    .map_err(|_| InstallError::CommandExecutionError)?;
+            }
+            // check if the ansible repository is added
+            // if not add it
+            let repo = Command::new("sh")
+                .arg("-c")
+                .arg("grep -q '^deb .*ansible/ansible' /etc/apt/sources.list /etc/apt/sources.list.d/*").status().map_err(|_| InstallError::CommandExecutionError)?;
+
+            if !repo.success() {
+                Command::new("sudo")
+                    .arg("apt-add-repository")
+                    .arg("--yes")
+                    .arg("--update")
+                    .arg("ppa:ansible/ansible")
+                    .output()
+                    .map_err(|_| InstallError::CommandExecutionError)?;
+            }
+            if !output.status.success() || !repo.success() {
+                return Err(InstallError::CommandExecutionError);
+            }
+        }
         // install the packages
         let output = Command::new("sudo")
             .arg("apt")
