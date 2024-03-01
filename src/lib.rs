@@ -168,15 +168,16 @@ pub mod dotfiles_presence {
         match path.try_exists() {
             Ok(ok) => {
                 if ok {
-                    // directory exists so return the path
-                    return Ok(true);
-                }
-                // directory does not exist so create it
-                // fs::create_dir(path).map_err(|_| DotfilesError::DirectoryCreationError)?;
-                let res = fs::create_dir(path);
-                match res {
-                    Ok(_) => Ok(false),
-                    Err(_) => Err(DotfilesError::DirectoryCreationError),
+                    // directory exists so return true
+                    Ok(true)
+                } else {
+                    // directory does not exist so create it
+                    // fs::create_dir(path).map_err(|_| DotfilesError::DirectoryCreationError)?;
+                    let res = fs::create_dir(path);
+                    match res {
+                        Ok(_) => Ok(false),
+                        Err(_) => Err(DotfilesError::DirectoryCreationError),
+                    }
                 }
             }
             Err(_) => {
@@ -205,6 +206,44 @@ pub mod dotfiles_presence {
 
             path = Path::new(&home).join(".ssh");
             assert!(dotfiles_directories(&path).is_ok());
+        }
+    }
+}
+
+pub mod install_packages {
+
+    use std::process::Command;
+
+    // custom error type for the install_packages() function
+    #[derive(Debug)]
+    pub enum InstallError {
+        CommandExecutionError,
+    }
+
+    pub fn install_package(package: &str) -> Result<(), InstallError> {
+        // install the packages
+        let output = Command::new("sudo")
+            .arg("apt")
+            .arg("install")
+            .arg("-y")
+            .arg(package)
+            .output()
+            .map_err(|_| InstallError::CommandExecutionError)?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            Err(InstallError::CommandExecutionError)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_install_package() {
+            assert!(install_package("curl").is_ok());
         }
     }
 }

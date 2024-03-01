@@ -3,13 +3,13 @@ use bldr::dotfiles_presence::DotfilesError;
 use bldr::gather_info;
 use bldr::gather_info::NameError;
 use bldr::gather_info::OSError;
+use bldr::install_packages;
 use bldr::validate_sys;
 use bldr::validate_sys::PlatformError;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
-use std::process::Command;
 use std::process::ExitCode;
 use which::which;
 
@@ -120,19 +120,18 @@ fn main() -> ExitCode {
                             .green(),
                         "is present"
                     );
-                    return ExitCode::SUCCESS;
+                } else {
+                    println!(
+                        "{} {} {}",
+                        "Dotfile directory",
+                        path.to_owned()
+                            .into_os_string()
+                            .into_string()
+                            .unwrap()
+                            .yellow(),
+                        "created successfully"
+                    );
                 }
-                println!(
-                    "{} {} {}",
-                    "Dotfile directory".yellow(),
-                    path.to_owned()
-                        .into_os_string()
-                        .into_string()
-                        .unwrap()
-                        .yellow(),
-                    "created successfully".yellow()
-                );
-                return ExitCode::SUCCESS;
             }
             Err(err) => match err {
                 DotfilesError::DirectoryCreationError => {
@@ -150,7 +149,9 @@ fn main() -> ExitCode {
             },
         }
     }
+
     // packages to install/check
+    // todo: is there a better way to do this?
     let packages = vec![
         String::from("ssh"),
         String::from("git"),
@@ -167,76 +168,35 @@ fn main() -> ExitCode {
 
     for package in packages {
         match which(&package) {
-            Ok(path) => println!(
-                "{} {} {}",
-                package,
-                "available at:",
-                path.into_os_string()
-                    .into_string()
-                    .expect("Unhandled path error")
-                    .green()
-            ),
-            Err(err) => {
-                eprintln!(
-                    "{} {} {} {}",
-                    "Installing".bold().yellow(),
-                    package.bold().yellow(),
-                    "->".bold().yellow(),
-                    err.to_string().bold().yellow()
+            Ok(path) => {
+                println!(
+                    "{} {} {}",
+                    package,
+                    "available at:",
+                    path.into_os_string()
+                        .into_string()
+                        .expect("Unhandled path error")
+                        .green()
                 );
-
-                match &package[..] {
-                    "ssh" => install_ssh(),
-                    "git" => install_git(),
-                    "python3" => install_python3(),
-                    "pip3" => install_pip3(),
-                    "ansible" => install_ansible(),
-                    _ => eprintln!("No package to install"),
-                };
             }
-        };
+            Err(err) => match install_packages::install_package(&package) {
+                Ok(_) => {
+                    eprintln!(
+                        "{} {} {} {}",
+                        "Installing".bold().yellow(),
+                        package.bold().yellow(),
+                        "->".bold().yellow(),
+                        err.to_string().bold().yellow()
+                    );
+                }
+                Err(err) => match err {
+                    install_packages::InstallError::CommandExecutionError => {
+                        eprintln!("{}", "Error executing system command".bold().red());
+                        return ExitCode::FAILURE;
+                    }
+                },
+            },
+        }
     }
     ExitCode::SUCCESS
-}
-
-#[allow(dead_code)]
-fn update_cache() {
-    let _ = Command::new("sh")
-        .arg("-c")
-        .arg("sudo apt update")
-        .output()
-        .expect("failed to execute process");
-
-    // let s = str::from_utf8(&output.stdout).unwrap();
-    // println!("{}", s);
-}
-
-#[allow(dead_code)]
-fn upgrade_packages() {
-    todo!("upgrading packages")
-}
-
-#[allow(dead_code)]
-fn install_ssh() {
-    todo!("installing ssh")
-}
-
-#[allow(dead_code)]
-fn install_git() {
-    todo!("installing git")
-}
-
-#[allow(dead_code)]
-fn install_python3() {
-    todo!("installing python3")
-}
-
-#[allow(dead_code)]
-fn install_pip3() {
-    todo!("installing python3-pip")
-}
-
-#[allow(dead_code)]
-fn install_ansible() {
-    todo!("installing ansible")
 }
