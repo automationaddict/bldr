@@ -214,6 +214,22 @@ pub mod install_packages {
 
     use std::process::Command;
 
+    fn apt_update_upgrade() {
+        // update and upgrade the system
+        let _ = Command::new("sudo")
+            .arg("apt")
+            .arg("update")
+            .output()
+            .expect("Failed to update the system");
+
+        let _ = Command::new("sudo")
+            .arg("apt")
+            .arg("upgrade")
+            .arg("-y")
+            .output()
+            .expect("Failed to upgrade the system");
+    }
+
     // custom error type for the install_packages() function
     #[derive(Debug)]
     pub enum InstallError {
@@ -221,6 +237,9 @@ pub mod install_packages {
     }
 
     pub fn install_package(package: &str) -> Result<(), InstallError> {
+        // update the apt cache
+        apt_update_upgrade();
+
         // install the packages
         let output = Command::new("sudo")
             .arg("apt")

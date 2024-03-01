@@ -112,7 +112,7 @@ fn main() -> ExitCode {
                 if present {
                     println!(
                         "{} {} {}",
-                        "Dotfile directory",
+                        "Dotfile directory ->",
                         path.to_owned()
                             .into_os_string()
                             .into_string()
@@ -123,11 +123,12 @@ fn main() -> ExitCode {
                 } else {
                     println!(
                         "{} {} {}",
-                        "Dotfile directory",
+                        "Dotfile directory ->",
                         path.to_owned()
                             .into_os_string()
                             .into_string()
                             .unwrap()
+                            .bold()
                             .yellow(),
                         "created successfully"
                     );
@@ -158,6 +159,7 @@ fn main() -> ExitCode {
         String::from("python3"),
         String::from("pip3"),
         String::from("ansible"),
+        String::from("vim"),
     ];
 
     // update the apt cache
@@ -172,7 +174,7 @@ fn main() -> ExitCode {
                 println!(
                     "{} {} {}",
                     package,
-                    "available at:",
+                    "available at ->",
                     path.into_os_string()
                         .into_string()
                         .expect("Unhandled path error")
@@ -183,9 +185,9 @@ fn main() -> ExitCode {
                 Ok(_) => {
                     eprintln!(
                         "{} {} {} {}",
-                        "Installing".bold().yellow(),
+                        "Installing",
                         package.bold().yellow(),
-                        "->".bold().yellow(),
+                        "->",
                         err.to_string().bold().yellow()
                     );
                 }
