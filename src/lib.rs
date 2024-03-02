@@ -51,7 +51,7 @@ pub mod gather_info {
             .output()
             .map_err(|_| OSError::CommandExecutionError)?;
 
-        // could get PRETTY_NAME but would need to parse it later
+        // NOTE: could get PRETTY_NAME but would need to parse it later
         let os_info = String::from_utf8_lossy(&output.stdout);
         let mut os_name = String::new();
         let mut os_version = String::new();
@@ -105,7 +105,7 @@ pub mod validate_sys {
         //check if this tool is supported
         let os_type = env::consts::OS;
         match os_type {
-            // todo: add additional OS later
+            // TODO: add additional OS later
             "linux" => Ok("Linux".to_string()),
             _ => Err(PlatformError::PlatformInfoParsingError),
         }
@@ -239,7 +239,7 @@ pub mod install_packages {
         // update the apt cache
         apt_update_upgrade();
 
-        // even though this is ugly, it is the best way to check if the repo is setup without requiring the user to add the ppa
+        // HACK: even though this is ugly, it is the best way to check if the repo is setup without requiring the user to add the ppa
         if package.contains("ansible") {
             // check if the software-properties-common package is installed
             let output = Command::new("dpkg")

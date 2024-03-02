@@ -87,7 +87,7 @@ fn main() -> ExitCode {
     // create the paths
     let mut paths = HashMap::new();
 
-    // todo: would these be better as a struct?
+    // TODO: would these be better as a struct?
     #[rustfmt::skip]
     paths.insert(
         "config_dir", 
@@ -188,7 +188,7 @@ fn main() -> ExitCode {
             .yellow()
     );
 
-    // todo: need to handle this better. Maybe map on the
+    // TODO: need to handle this better. Maybe map on the
     // packages and return a result? Callbacks?
     //
     // loop through the packages and check if they are installed
