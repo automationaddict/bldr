@@ -6,6 +6,7 @@ use bldr::gather_info::OSError;
 use bldr::install_packages;
 use bldr::validate_sys;
 use bldr::validate_sys::PlatformError;
+use clap::{arg, command, value_parser, ArgAction, Command};
 use colored::Colorize;
 use std::collections::HashMap;
 use std::env;
@@ -14,6 +15,19 @@ use std::process::ExitCode;
 use which::which;
 
 fn main() -> ExitCode {
+    let matches = command!()
+        .about("A tool to automate the setup of a new system for Ansible")
+        .arg(
+            arg!(
+            -u --url <PATH> "The URL to clone the repository from"
+            )
+            .required(true),
+        )
+        .arg(arg!(
+        -p --path <PATH> "The path to clone the repository to"
+        ))
+        .get_matches();
+
     // greet the user with their full name
     match gather_info::get_users_full_name() {
         Ok(full_name) => println!("{} {}", "Hey!", full_name.green()),
@@ -27,6 +41,23 @@ fn main() -> ExitCode {
                 return ExitCode::FAILURE;
             }
         },
+    }
+
+    // elevate permissions if necessary
+    match elevate::check() {
+        elevate::RunningAs::Root => {
+            println!("{}", "Running as root!".bold().green());
+        }
+        elevate::RunningAs::User => {
+            println!("{}", "You are running as a user".bold().yellow());
+            println!("{}", "Elevating permissions to root!".bold().yellow());
+            elevate::escalate_if_needed().expect("Error elevating permissions");
+            return ExitCode::FAILURE;
+        }
+        elevate::RunningAs::Suid => {
+            eprintln!("{}", "Error checking permissions".bold().red());
+            return ExitCode::FAILURE;
+        }
     }
 
     // get the OS that this is installed on
@@ -57,7 +88,15 @@ fn main() -> ExitCode {
 
     // check if this distribution is supported
     match validate_sys::get_linux_distribution() {
-        Ok(distro) => println!("{} {}", "Detected distribution:", distro.green()),
+        Ok(distro) => {
+            println!("{} {}", "Detected distribution:", distro.green());
+            // TODO: add additional distributions later
+            if distro == "pop" {
+                println!("{}", "Your distribution is supported:".green());
+            } else {
+                println!("{}", "Your distribution is NOT supported:".red());
+            }
+        }
         Err(err) => match err {
             validate_sys::DistroError::CommandExecutionError => {
                 eprintln!("{}", "Error executing system command".bold().red());
